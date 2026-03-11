@@ -41,5 +41,73 @@
  *   // => { name: "Priya", totalMarks: 63, percentage: 31.5, grade: "F", ... }
  */
 export function generateReportCard(student) {
-  // Your code here
+    // 1. Validation: Object and Name existence
+    if (!student || typeof student !== 'object' || !student.name || typeof student.name !== 'string' || student.name.trim() === "") {
+        return null;
+    }
+
+    // 2. Validation: Marks existence and non-empty
+    if (!student.marks || typeof student.marks !== 'object' || Array.isArray(student.marks)) {
+        return null;
+    }
+
+    const entries = Object.entries(student.marks);
+    const subjectCount = entries.length;
+
+    if (subjectCount === 0) {
+        return null;
+    }
+
+    // 3. Validation: All marks must be valid numbers between 0 and 100
+    for (const [subject, mark] of entries) {
+        if (typeof mark !== 'number' || !Number.isFinite(mark) || mark < 0 || mark > 100) {
+            return null;
+        }
+    }
+
+    // 4. Calculations using Array Methods
+    const marksValues = Object.values(student.marks);
+
+    // totalMarks using reduce
+    const totalMarks = marksValues.reduce((sum, current) => sum + current, 0);
+
+    // percentage rounded to 2 decimal places
+    const percentage = parseFloat(((totalMarks / (subjectCount * 100)) * 100).toFixed(2));
+
+    // grade logic
+    let grade;
+    if (percentage >= 90) grade = "A+";
+    else if (percentage >= 80) grade = "A";
+    else if (percentage >= 70) grade = "B";
+    else if (percentage >= 60) grade = "C";
+    else if (percentage >= 40) grade = "D";
+    else grade = "F";
+
+    // Finding highest and lowest subjects
+    // Sort entries by marks to find max and min easily
+    const sortedEntries = [...entries].sort((a, b) => b[1] - a[1]);
+    const highestSubject = sortedEntries[0][0];
+    const lowestSubject = sortedEntries[sortedEntries.length - 1][0];
+
+    // Passed and Failed subjects using filter
+    const passedSubjects = entries
+        .filter(([subject, mark]) => mark >= 40)
+        .map(([subject, mark]) => subject);
+
+    const failedSubjects = entries
+        .filter(([subject, mark]) => mark < 40)
+        .map(([subject, mark]) => subject);
+
+    // 5. Final Report Card Object
+    return {
+        name: student.name,
+        totalMarks,
+        percentage,
+        grade,
+        highestSubject,
+        lowestSubject,
+        passedSubjects,
+        failedSubjects,
+        subjectCount
+    };
 }

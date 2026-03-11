@@ -28,5 +28,21 @@
  *   // => ""
  */
 export function formatChaiMenu(items) {
-  // Your code here
+    // 1. Validation: Must be a non-empty array
+    if (!Array.isArray(items) || items.length === 0) {
+        return "";
+    }
+
+    return items
+        // 2. Filter: Keep only items with a valid name (string/non-empty) and price > 0
+        .filter(item =>
+            typeof item.name === 'string' &&
+            item.name.trim().length > 0 &&
+            typeof item.price === 'number' &&
+            item.price > 0
+        )
+        // 3. Map: Transform into the "NAME - Rs.PRICE" format
+        .map(item => `${item.name.toUpperCase()} - Rs.${item.price}`)
+        // 4. Join: Combine all strings with " | "
+        .join(" | ");
 }

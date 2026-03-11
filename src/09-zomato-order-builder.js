@@ -46,5 +46,78 @@
  *   // grandTotal: 1000 + 0 + 50 - 150 = 900
  */
 export function buildZomatoOrder(cart, coupon) {
-  // Your code here
+    // 1. Validation: Must be an array and not empty
+    if (!Array.isArray(cart) || cart.length === 0) {
+        return null;
+    }
+
+    // 2. Filter valid items (qty > 0) and Calculate Itemwise Breakdown
+    const processedItems = cart
+        .filter(item => item.qty > 0)
+        .map(item => {
+            // Calculate Addon Total
+            const addonTotal = (item.addons || []).reduce((sum, addonStr) => {
+                const price = parseFloat(addonStr.split(":")[1]) || 0;
+                return sum + price;
+            }, 0);
+
+            const itemTotal = (item.price + addonTotal) * item.qty;
+
+            return {
+                name: item.name,
+                qty: item.qty,
+                basePrice: item.price,
+                addonTotal: addonTotal,
+                itemTotal: itemTotal
+            };
+        });
+
+    // If no valid items left after filtering
+    if (processedItems.length === 0) return null;
+
+    // 3. Subtotal Calculation
+    const subtotal = processedItems.reduce((sum, item) => sum + item.itemTotal, 0);
+
+    // 4. Initial Delivery Fee Calculation
+    let deliveryFee = 30;
+    if (subtotal >= 1000) {
+        deliveryFee = 0;
+    } else if (subtotal >= 500) {
+        deliveryFee = 15;
+    }
+
+    // 5. GST Calculation (5% of subtotal)
+    const gst = parseFloat((subtotal * 0.05).toFixed(2));
+
+    // 6. Discount & Coupon Logic
+    let discount = 0;
+    const couponCode = coupon ? coupon.toUpperCase() : "";
+
+    if (couponCode === "FIRST50") {
+        // 50% off subtotal, max Rs 150
+        discount = Math.min(subtotal * 0.5, 150);
+    } else if (couponCode === "FLAT100") {
+        // Flat Rs 100 off (but not more than subtotal + gst)
+        discount = 100;
+    } else if (couponCode === "FREESHIP") {
+        // Delivery fee becomes 0
+        discount = deliveryFee;
+        deliveryFee = 0; // Note: Either discount = fee OR deliveryFee = 0.
+        // Usually, Zomato shows it as a discount covering the fee.
+    }
+
+    // 7. Grand Total Calculation
+    // Formula: subtotal + deliveryFee + gst - discount
+    // Minimum 0 to prevent negative bills
+    let rawGrandTotal = subtotal + deliveryFee + gst - discount;
+    const grandTotal = parseFloat(Math.max(0, rawGrandTotal).toFixed(2));
+
+    return {
+        items: processedItems,
+        subtotal: subtotal,
+        deliveryFee: deliveryFee,
+        gst: gst,
+        discount: parseFloat(discount.toFixed(2)),
+        grandTotal: grandTotal
+    };
 }
